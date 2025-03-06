@@ -746,6 +746,7 @@ body {
   text-align: center;
   margin-bottom: 20px;
 }
+
 #imagesSection .image-uploader input[type="file"] {
   display: inline-block;
   margin-bottom: 10px;
@@ -756,6 +757,7 @@ body {
   border-radius: 4px;
   cursor: pointer;
 }
+
 #imagesSection .image-uploader input[type="file"]::-webkit-file-upload-button {
   background: linear-gradient(135deg, #2196F3, #21CBF3);
   border: none;
@@ -765,61 +767,85 @@ body {
   cursor: pointer;
   transition: background 0.3s;
 }
+
 #imagesSection .image-uploader input[type="file"]::-webkit-file-upload-button:hover {
   background: linear-gradient(135deg, #2196F3, #21CBF3);
 }
+
 #imagesSection .images-container {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 20px;
-  padding: 10px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 0;
+  margin-top: 40px;
+  padding: 0;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
 }
+
 .image-item {
-  background-color: var(--background-color);
+  position: relative;
+  background: var(--dark);
   border-radius: 10px;
   overflow: hidden;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.4);
-  position: relative;
-  transition: transform 0.3s, box-shadow 0.3s;
-  width: 50%; /* Adjust as needed */
-  height: auto;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+  transition: all 0.3s;
+  border: 2px solid black;
+  aspect-ratio: 1 / 1;
+  margin: 0;
 }
-.image-item:hover {
-  transform: scale(1.02);
-  box-shadow: 0 6px 12px rgba(0,0,0,0.5);
-}
+
 .image-item img {
   display: block;
   width: 100%;
-  height: auto;
+  height: 100%;
+  object-fit: contain;
 }
-.image-item .caption {
+
+.image-info {
   padding: 10px;
   background: #121212;
-  text-align: center;
-  font-size: 0.9em;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.image-timestamp {
   color: #ccc;
 }
+
 .image-item .delete-btn {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  background-color: rgba(255, 59, 48, 0.8);
+  background-color: rgba(128, 128, 128, 0.8);
   border: none;
   color: #fff;
   font-size: 0.9em;
   width: 30px;
+  height: 30px;
   border-radius: 50%;
   cursor: pointer;
-  opacity: 0;
-  transition: opacity 0.3s, transform 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.3s;
 }
-.image-item:hover .delete-btn {
-  opacity: 1;
-}
+
 .image-item .delete-btn:hover {
-  transform: scale(1.1);
+  background-color: rgba(128, 128, 128, 1);
+}
+
+/* ===============================
+   Media Queries for Responsive Design
+   =============================== */
+@media (max-width: 600px) {
+  .images-container {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (min-width: 601px) {
+  .images-container {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 /* ===============================
@@ -907,6 +933,19 @@ body {
   transform: translateY(-2px);
 }
 
+/* Add a loading indicator style */
+.loading-indicator {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 20px;
+  border-radius: 10px;
+  z-index: 1000;
+}
 
   </style>
 </head>
@@ -988,7 +1027,9 @@ body {
         <input type="file" id="imageInput" accept="image/*" multiple />
         <button onclick="uploadImage()" id="bt">Upload Images</button>
       </div>
-      <div class="images-container" id="imagesContainer"></div>
+      <div class="images-container" id="imagesContainer">
+        <!-- Images will be dynamically inserted here -->
+      </div>
     </div>
   </div>
   
@@ -1510,22 +1551,37 @@ function uploadImage() {
     return;
   }
 
-  // Loop through all selected files
-  Array.from(imageInput.files).forEach(file => {
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      const image = {
-        id: Date.now() + Math.random(), // Ensure unique ID for each image
-        data: e.target.result, // Use original image data
-        timestamp: new Date().toLocaleDateString('en-GB')
+  showLoadingIndicator(); // Show loading indicator
+
+  // Create a promise to handle the loading indicator
+  const promises = Array.from(imageInput.files).map(file => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const image = {
+          id: Date.now() + Math.random(), // Ensure unique ID for each image
+          data: e.target.result, // Use original image data
+          timestamp: new Date().toLocaleDateString('en-GB')
+        };
+        saveImageToIndexedDB(image);
+        resolve(); // Resolve the promise when done
       };
-      saveImageToIndexedDB(image);
-    };
-    reader.onerror = function() {
-      console.error("Error reading file:", reader.error);
-    };
-    reader.readAsDataURL(file);
+      reader.onerror = function() {
+        console.error("Error reading file:", reader.error);
+        reject(reader.error); // Reject the promise on error
+      };
+      reader.readAsDataURL(file);
+    });
   });
+
+  // Wait for all promises to resolve
+  Promise.all(promises)
+    .then(() => {
+      loadImages(); // Load images after all are saved
+    })
+    .finally(() => {
+      hideLoadingIndicator(); // Hide loading indicator after processing
+    });
 
   imageInput.value = ""; // Clear the input after upload
 }
@@ -1553,27 +1609,68 @@ function renderImages(images) {
   } else {
     container.innerHTML = images.map(image => `
       <div class="image-item" id="image-${image.id}">
-        <img src="${image.data}" alt="Uploaded Image" />
-        <small>${image.timestamp}</small>
-        <button class="delete-btn" onclick="deleteImage(${image.id})">✕</button>
+        <img src="${image.data}" alt="Uploaded Image" onclick="openImage('${image.data}')" />
+        <div class="image-info">
+          <small class="image-timestamp">${image.timestamp}</small>
+          <button class="delete-btn" onclick="deleteImage(${image.id}); event.stopPropagation();">✕</button>
+        </div>
       </div>
     `).join('');
   }
 }
 
+function openImage(imageData) {
+  const imageViewer = document.createElement('div');
+  imageViewer.style.position = 'fixed';
+  imageViewer.style.top = '0';
+  imageViewer.style.left = '0';
+  imageViewer.style.width = '100%';
+  imageViewer.style.height = '100%';
+  imageViewer.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+  imageViewer.style.display = 'flex';
+  imageViewer.style.alignItems = 'center';
+  imageViewer.style.justifyContent = 'center';
+  imageViewer.innerHTML = `
+    <img src="${imageData}" style="max-width: 90%; max-height: 90%;" onclick="this.parentElement.remove();" />
+  `;
+  document.body.appendChild(imageViewer);
+}
+
+// Show loading indicator when processing images
+function showLoadingIndicator() {
+  const loadingIndicator = document.createElement('div');
+  loadingIndicator.className = 'loading-indicator';
+  loadingIndicator.innerText = 'Processing...';
+  document.body.appendChild(loadingIndicator);
+  loadingIndicator.style.display = 'block';
+}
+
+function hideLoadingIndicator() {
+  const loadingIndicator = document.querySelector('.loading-indicator');
+  if (loadingIndicator) {
+    loadingIndicator.style.display = 'none';
+    loadingIndicator.remove();
+  }
+}
+
 function deleteImage(id) {
-  const transaction = db.transaction(["images"], "readwrite");
-  const store = transaction.objectStore("images");
-  const request = store.delete(id);
+  // Add a confirmation dialog before deletion
+  if (confirm("Are you sure you want to delete this image?")) {
+    const transaction = db.transaction(["images"], "readwrite");
+    const store = transaction.objectStore("images");
+    const request = store.delete(id);
 
-  request.onsuccess = function() {
-    console.log("Image deleted successfully!");
-    loadImages(); // Reload images after deletion
-  };
+    request.onsuccess = function() {
+      console.log("Image deleted successfully!");
+      loadImages(); // Reload images after deletion
+    };
 
-  request.onerror = function() {
-    console.error("Error deleting image:", request.error);
-  };
+    request.onerror = function() {
+      console.error("Error deleting image:", request.error);
+    };
+  } else {
+    console.log("Image deletion canceled.");
+  }
 }
 
 /* ============ Backup Feature ============ */
@@ -1668,7 +1765,7 @@ function initializeApp() {
     loadNotebooks();
     renderNotes();
     loadChecklistGroups();
-    renderImages();
+    loadImages(); // Load images when the app initializes
 
     // Restore last opened section
     const lastSection = localStorage.getItem('lastOpenedSection') || 'regular';
