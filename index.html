@@ -985,8 +985,8 @@ body {
     <!-- Images Section -->
     <div class="note-section" id="imagesSection">
       <div class="image-uploader">
-        <input type="file" id="imageInput" accept="image/*" />
-        <button onclick="uploadImage()" id="bt">Upload Image</button>
+        <input type="file" id="imageInput" accept="image/*" multiple />
+        <button onclick="uploadImage()" id="bt">Upload Images</button>
       </div>
       <div class="images-container" id="imagesContainer"></div>
     </div>
@@ -1506,24 +1506,28 @@ function saveImageToIndexedDB(image) {
 function uploadImage() {
   const imageInput = document.getElementById('imageInput');
   if (imageInput.files.length === 0) {
-    alert("Please select an image file.");
+    alert("Please select at least one image file.");
     return;
   }
-  const file = imageInput.files[0];
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    const image = {
-      id: Date.now(),
-      data: e.target.result, // Use original image data
-      timestamp: new Date().toLocaleDateString('en-GB')
+
+  // Loop through all selected files
+  Array.from(imageInput.files).forEach(file => {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const image = {
+        id: Date.now() + Math.random(), // Ensure unique ID for each image
+        data: e.target.result, // Use original image data
+        timestamp: new Date().toLocaleDateString('en-GB')
+      };
+      saveImageToIndexedDB(image);
     };
-    saveImageToIndexedDB(image);
-    imageInput.value = ""; // Clear the input after upload
-  };
-  reader.onerror = function() {
-    console.error("Error reading file:", reader.error);
-  };
-  reader.readAsDataURL(file);
+    reader.onerror = function() {
+      console.error("Error reading file:", reader.error);
+    };
+    reader.readAsDataURL(file);
+  });
+
+  imageInput.value = ""; // Clear the input after upload
 }
 
 function loadImages() {
@@ -1573,12 +1577,13 @@ function deleteImage(id) {
 }
 
 /* ============ Backup Feature ============ */
-function exportData() {
+async function exportData() {
+  const images = await loadAllImages(); // Load images before exporting
   const data = {
     notes: localStorage.getItem('notes') || null,
     notebooks: localStorage.getItem('notebooks') || null,
     checklistGroups: localStorage.getItem('checklistGroups') || null,
-    images: JSON.stringify(await loadAllImages()), // Save images as JSON
+    images: JSON.stringify(images), // Save images as JSON
     lockedSectionPassword: localStorage.getItem('lockedSectionPassword') || null
   };
   const dataStr = JSON.stringify(data, null, 2);
@@ -1614,20 +1619,43 @@ function importData(file) {
   reader.onload = function(e) {
     try {
       const data = JSON.parse(e.target.result);
-      if (data.notes !== undefined) localStorage.setItem('notes', data.notes);
-      if (data.notebooks !== undefined) localStorage.setItem('notebooks', data.notebooks);
-      if (data.checklistGroups !== undefined) localStorage.setItem('checklistGroups', data.checklistGroups);
+      
+      // Validate the structure of the data
+      if (typeof data.notes === 'string') {
+        localStorage.setItem('notes', data.notes);
+      } else {
+        throw new Error("Invalid notes format");
+      }
+
+      if (typeof data.notebooks === 'string') {
+        localStorage.setItem('notebooks', data.notebooks);
+      } else {
+        throw new Error("Invalid notebooks format");
+      }
+
+      if (typeof data.checklistGroups === 'string') {
+        localStorage.setItem('checklistGroups', data.checklistGroups);
+      } else {
+        throw new Error("Invalid checklist groups format");
+      }
+
       if (data.images !== undefined) {
         const images = JSON.parse(data.images);
-        images.forEach(image => saveImageToIndexedDB(image)); // Save each image to IndexedDB
+        if (Array.isArray(images)) {
+          images.forEach(image => saveImageToIndexedDB(image)); // Save each image to IndexedDB
+        } else {
+          throw new Error("Invalid images format");
+        }
       }
+
       if (data.lockedSectionPassword !== undefined) {
         localStorage.setItem('lockedSectionPassword', data.lockedSectionPassword);
       }
+
       alert("Data imported successfully! Reloading the page...");
       location.reload();
     } catch (err) {
-      alert("Failed to import data: Invalid backup file.");
+      alert("Failed to import data: " + err.message);
     }
   };
   reader.readAsText(file);
@@ -1635,20 +1663,23 @@ function importData(file) {
 
 /* ============ Initial Loads ============ */
 function initializeApp() {
-  loadNotebooks();
-  renderNotes();
-  loadChecklistGroups();
-  renderImages();
+  request.onsuccess = function(event) {
+    db = event.target.result; // Assign db to the global variable
+    loadNotebooks();
+    renderNotes();
+    loadChecklistGroups();
+    renderImages();
 
-  // Restore last opened section
-  const lastSection = localStorage.getItem('lastOpenedSection') || 'regular';
-  showSection(lastSection);
+    // Restore last opened section
+    const lastSection = localStorage.getItem('lastOpenedSection') || 'regular';
+    showSection(lastSection);
 
-  // Restore last opened notebook if any
-  const lastNotebook = localStorage.getItem('lastOpenedNotebook');
-  if (lastSection === 'regular' && lastNotebook) {
-    openNotebook(parseInt(lastNotebook));
-  }
+    // Restore last opened notebook if any
+    const lastNotebook = localStorage.getItem('lastOpenedNotebook');
+    if (lastSection === 'regular' && lastNotebook) {
+      openNotebook(parseInt(lastNotebook));
+    }
+  };
 }
 
 // Replace the existing initial loads with initializeApp()
