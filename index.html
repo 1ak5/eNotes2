@@ -1053,6 +1053,7 @@ let currentNotebookId = null;
 let editingNoteId = null;
 let currentChecklistGroupId = null;
 let db; // Declare db variable globally
+let lastTapTime = 0; // Variable to store the last tap time
 
 /* ============ Section Switching ============ */
 function showSection(section) {
@@ -1618,20 +1619,28 @@ function renderImages(images) {
 }
 
 function openImage(imageData) {
-  const imageViewer = document.createElement('div');
-  imageViewer.style.position = 'fixed';
-  imageViewer.style.top = '0';
-  imageViewer.style.left = '0';
-  imageViewer.style.width = '100%';
-  imageViewer.style.height = '100%';
-  imageViewer.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
-  imageViewer.style.display = 'flex';
-  imageViewer.style.alignItems = 'center';
-  imageViewer.style.justifyContent = 'center';
-  imageViewer.innerHTML = `
-    <img src="${imageData}" style="max-width: 90%; max-height: 90%;" onclick="this.parentElement.remove();" />
-  `;
-  document.body.appendChild(imageViewer);
+  const currentTime = new Date().getTime();
+  const tapDelay = 300; // Time in milliseconds to consider as a double tap
+
+  if (currentTime - lastTapTime < tapDelay) {
+    // If the time between taps is less than the delay, it's a double tap
+    const imageViewer = document.createElement('div');
+    imageViewer.style.position = 'fixed';
+    imageViewer.style.top = '0';
+    imageViewer.style.left = '0';
+    imageViewer.style.width = '100%';
+    imageViewer.style.height = '100%';
+    imageViewer.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+    imageViewer.style.display = 'flex';
+    imageViewer.style.alignItems = 'center';
+    imageViewer.style.justifyContent = 'center';
+    imageViewer.innerHTML = `
+      <img src="${imageData}" style="max-width: 90%; max-height: 90%;" onclick="this.parentElement.remove();" />
+    `;
+    document.body.appendChild(imageViewer);
+  }
+
+  lastTapTime = currentTime; // Update the last tap time
 }
 
 function deleteImage(id) {
