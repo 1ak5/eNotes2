@@ -794,98 +794,6 @@ body {
   width: 100%;
   height: auto;
 }
-
-/* Loading Indicator */
-.loading-indicator {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-  color: #fff;
-  font-size: 1.2em;
-  font-weight: bold;
-}
-
-.spinner {
-  border: 4px solid rgba(255, 255, 255, 0.3);
-  border-top: 4px solid #fff;
-  border-radius: 50%;
-  width: 30px;
-  height: 30px;
-  animation: spin 1s linear infinite;
-  margin-right: 10px;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-/* Optimization Note */
-.optimization-note {
-  background-color: #2196F3;
-  color: #fff;
-  padding: 10px;
-  border-radius: 4px;
-  margin-bottom: 10px;
-  text-align: center;
-  font-weight: bold;
-  animation: fadeIn 0.5s ease-in-out;
-}
-
-@keyframes fadeIn {
-  0% { opacity: 0; }
-  100% { opacity: 1; }
-}
-
-/* Loading indicator styles */
-.loading-indicator {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: rgba(0, 0, 0, 0.8);
-  color: white;
-  padding: 15px 25px;
-  border-radius: 8px;
-  z-index: 9999;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-}
-
-.spinner {
-  display: inline-block;
-  width: 20px;
-  height: 20px;
-  border: 3px solid rgba(255, 255, 255, 0.3);
-  border-radius: 50%;
-  border-top-color: #fff;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-/* Image optimization notification */
-.optimization-note {
-  background: rgba(52, 152, 219, 0.1);
-  border-left: 4px solid #3498db;
-  padding: 10px 15px;
-  margin: 10px 0;
-  font-size: 0.9em;
-  color: #2980b9;
-  border-radius: 0 4px 4px 0;
-}
 .image-item .caption {
   padding: 10px;
   background: #121212;
@@ -1077,7 +985,7 @@ body {
     <!-- Images Section -->
     <div class="note-section" id="imagesSection">
       <div class="image-uploader">
-        <input type="file" id="imageInput" accept="image/*" multiple />
+        <input type="file" id="imageInput" accept="image/*" />
         <button onclick="uploadImage()" id="bt">Upload Image</button>
       </div>
       <div class="images-container" id="imagesContainer"></div>
@@ -1101,6 +1009,7 @@ let lockedSectionUnlocked = false;
 let currentNotebookId = null;
 let editingNoteId = null;
 let currentChecklistGroupId = null;
+let db; // Declare db variable globally
 
 /* ============ Section Switching ============ */
 function showSection(section) {
@@ -1561,250 +1470,80 @@ function deleteChecklistGroup(e, groupId) {
 }
 
 /* ============ Image Upload & Compression Feature ============ */
-function compressImage(imageDataUrl, quality, callback) {
-  const img = new Image();
-  img.onload = function() {
-    const originalWidth = img.width;
-    const originalHeight = img.height;
-    
-    // Determine compression level based on image size
-    let compressionFactor = 1; // Default - no size reduction
-    const sizeInMB = estimateImageSizeInMB(imageDataUrl);
-    
-    if (sizeInMB > 10) {
-      compressionFactor = 8; // Very high compression for very large images
-    } else if (sizeInMB > 5) {
-      compressionFactor = 4; // High compression
-    } else if (sizeInMB > 2) {
-      compressionFactor = 2; // Medium compression
-    }
-    
-    // Calculate new dimensions
-    const newWidth = Math.floor(originalWidth / compressionFactor);
-    const newHeight = Math.floor(originalHeight / compressionFactor);
-    
-    const canvas = document.createElement('canvas');
-    canvas.width = newWidth;
-    canvas.height = newHeight;
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(img, 0, 0, newWidth, newHeight);
-    
-    // Adjust quality based on image size
-    const finalQuality = quality * (sizeInMB > 5 ? 0.7 : 0.9);
-    
-    // Use webp format for better compression if supported
-    const isWebPSupported = getWebPSupport();
-    const mimeType = isWebPSupported ? 'image/webp' : 'image/jpeg';
-    
-    const compressedDataUrl = canvas.toDataURL(mimeType, finalQuality);
-    
-    // Log compression stats
-    console.log(`Image compression: ${sizeInMB.toFixed(2)}MB -> ${estimateImageSizeInMB(compressedDataUrl).toFixed(2)}MB (${Math.round((1 - estimateImageSizeInMB(compressedDataUrl) / sizeInMB) * 100)}% reduction)`);
-    
-    callback(compressedDataUrl);
+// Open (or create) the database
+const request = indexedDB.open("ImageDB", 1);
+
+request.onupgradeneeded = function(event) {
+  const db = event.target.result;
+  db.createObjectStore("images", { keyPath: "id" });
+};
+
+request.onsuccess = function(event) {
+  db = event.target.result; // Assign db to the global variable
+  console.log("Database opened successfully");
+  loadImages(); // Load images after DB is ready
+};
+
+request.onerror = function(event) {
+  console.error("Database error:", event.target.error);
+};
+
+function saveImageToIndexedDB(image) {
+  const transaction = db.transaction(["images"], "readwrite");
+  const store = transaction.objectStore("images");
+  const request = store.add(image);
+
+  request.onsuccess = function() {
+    console.log("Image saved successfully!");
+    loadImages(); // Load images after saving
   };
-  img.src = imageDataUrl;
+
+  request.onerror = function() {
+    console.error("Error saving image:", request.error);
+  };
 }
-
-// Helper function to estimate image size in MB
-function estimateImageSizeInMB(dataUrl) {
-  // Remove the data:image/xxx;base64, part
-  const base64 = dataUrl.split(',')[1];
-  // Calculate size in bytes: (base64 length * 3) / 4 - approx formula for base64 to binary
-  const sizeInBytes = (base64.length * 3) / 4;
-  return sizeInBytes / (1024 * 1024);
-}
-
-// Check WebP support
-function getWebPSupport() {
-  const canvas = document.createElement('canvas');
-  if (canvas.toDataURL('image/webp').indexOf('data:image/webp') === 0) {
-    return true;
-  }
-  return false;
-}
-
-// Initialize IndexedDB for storing images
-let db;
-function initImageDB() {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open('eNotesImageDB', 1);
-
-    request.onerror = (event) => {
-      console.error('Database error:', event.target.error);
-      reject('Could not open database');
-    };
-
-    request.onupgradeneeded = (event) => {
-      const db = event.target.result;
-      if (!db.objectStoreNames.contains('images')) {
-        db.createObjectStore('images', { keyPath: 'id' });
-      }
-    };
-
-    request.onsuccess = (event) => {
-      db = event.target.result;
-      console.log('Image database opened successfully');
-      resolve(db);
-    };
-  });
-}
-
-// Initialize DB when page loads
-document.addEventListener('DOMContentLoaded', function() {
-  initImageDB().catch(error => {
-    console.error('Failed to initialize image database:', error);
-    alert('Failed to initialize image database. Local storage will be used as fallback.');
-  });
-});
 
 function uploadImage() {
   const imageInput = document.getElementById('imageInput');
   if (imageInput.files.length === 0) {
-    alert("Please select at least one image file.");
+    alert("Please select an image file.");
     return;
   }
-
-  // Loop through each selected file
-  const files = Array.from(imageInput.files);
-  const uploadPromises = files.map(file => {
-    const fileSizeMB = file.size / (1024 * 1024);
-    
-    // Show optimization note if file is large
-    if (fileSizeMB > 2) {
-      const container = document.getElementById('imagesContainer');
-      const noteEl = document.createElement('div');
-      noteEl.className = 'optimization-note';
-      noteEl.innerHTML = `<strong>Large image detected (${fileSizeMB.toFixed(1)}MB)!</strong> Your image will be automatically optimized for better performance.`;
-      
-      // Insert at the beginning of the container
-      if (container.firstChild) {
-        container.insertBefore(noteEl, container.firstChild);
-      } else {
-        container.appendChild(noteEl);
-      }
-      
-      // Remove after 5 seconds
-      setTimeout(() => {
-        if (noteEl.parentNode) {
-          noteEl.parentNode.removeChild(noteEl);
-        }
-      }, 5000);
-    }
-
-    // Show loading indicator
-    const loadingEl = document.createElement('div');
-    loadingEl.className = 'loading-indicator';
-    loadingEl.innerHTML = '<div class="spinner"></div> Processing image...';
-    document.body.appendChild(loadingEl);
-    
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const originalImageData = e.target.result;
-        compressImage(originalImageData, 0.7, function(compressedImageData) {
-          const image = {
-            id: Date.now(),
-            data: compressedImageData,
-            timestamp: new Date().toLocaleDateString('en-GB')
-          };
-          
-          saveImage(image).then(() => {
-            renderImages();
-            imageInput.value = "";
-            // Remove loading indicator
-            document.body.removeChild(loadingEl);
-            resolve();
-          }).catch(error => {
-            console.error('Error saving image:', error);
-            alert('Error saving image. Please try again.');
-            document.body.removeChild(loadingEl);
-            reject(error);
-          });
-        });
-      };
-      reader.readAsDataURL(file);
-    });
-  });
-
-  // Wait for all uploads to complete
-  Promise.all(uploadPromises).then(() => {
-    console.log("All images uploaded successfully.");
-  }).catch(err => {
-    console.error("Error uploading images:", err);
-  });
+  const file = imageInput.files[0];
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const image = {
+      id: Date.now(),
+      data: e.target.result, // Use original image data
+      timestamp: new Date().toLocaleDateString('en-GB')
+    };
+    saveImageToIndexedDB(image);
+    imageInput.value = ""; // Clear the input after upload
+  };
+  reader.onerror = function() {
+    console.error("Error reading file:", reader.error);
+  };
+  reader.readAsDataURL(file);
 }
 
-function saveImage(image) {
-  // Try to save to IndexedDB first, fallback to localStorage if not available
-  if (db) {
-    return saveToIndexedDB(image);
-  } else {
-    return new Promise((resolve) => {
-      // Fallback to localStorage
-      const images = JSON.parse(localStorage.getItem('images') || '[]');
-      images.push(image);
-      localStorage.setItem('images', JSON.stringify(images));
-      resolve();
-    });
-  }
+function loadImages() {
+  const transaction = db.transaction(["images"], "readonly");
+  const store = transaction.objectStore("images");
+  const request = store.getAll(); // Get all images
+
+  request.onsuccess = function(event) {
+    const images = event.target.result;
+    renderImages(images); // Pass images to renderImages
+  };
+
+  request.onerror = function() {
+    console.error("Error loading images:", request.error);
+  };
 }
 
-function saveToIndexedDB(image) {
-  return new Promise((resolve, reject) => {
-    try {
-      const transaction = db.transaction(['images'], 'readwrite');
-      const store = transaction.objectStore('images');
-      const request = store.add(image);
-      
-      request.onsuccess = () => resolve();
-      request.onerror = () => reject(request.error);
-    } catch (error) {
-      reject(error);
-    }
-  });
-}
-
-function renderImages() {
-  // If IndexedDB is available, load from there, otherwise from localStorage
-  if (db) {
-    loadImagesFromDB().then(images => {
-      displayImages(images);
-    }).catch(error => {
-      console.error('Error loading images from DB:', error);
-      // Fallback to localStorage
-      const images = JSON.parse(localStorage.getItem('images') || '[]');
-      displayImages(images);
-    });
-  } else {
-    const images = JSON.parse(localStorage.getItem('images') || '[]');
-    displayImages(images);
-  }
-}
-
-function loadImagesFromDB() {
-  return new Promise((resolve, reject) => {
-    try {
-      const transaction = db.transaction(['images'], 'readonly');
-      const store = transaction.objectStore('images');
-      const request = store.getAll();
-      
-      request.onsuccess = () => {
-        const images = request.result || [];
-        resolve(images);
-      };
-      
-      request.onerror = () => reject(request.error);
-    } catch (error) {
-      reject(error);
-    }
-  });
-}
-
-function displayImages(images) {
+function renderImages(images) {
   const container = document.getElementById('imagesContainer');
   if (!container) return;
-  
   if (images.length === 0) {
     container.innerHTML = '<p>No images uploaded yet.</p>';
   } else {
@@ -1819,52 +1558,18 @@ function displayImages(images) {
 }
 
 function deleteImage(id) {
-  if (confirm("Are you sure you want to delete this image?")) {
-    // Show loading indicator
-    const loadingEl = document.createElement('div');
-    loadingEl.className = 'loading-indicator';
-    loadingEl.innerHTML = '<div class="spinner"></div> Deleting image...';
-    document.body.appendChild(loadingEl);
-    
-    // If IndexedDB is available, delete from there, otherwise from localStorage
-    if (db) {
-      deleteFromIndexedDB(id).then(() => {
-        renderImages();
-        document.body.removeChild(loadingEl);
-      }).catch(error => {
-        console.error('Error deleting image from DB:', error);
-        // Fallback to localStorage
-        deleteFromLocalStorage(id);
-        renderImages();
-        document.body.removeChild(loadingEl);
-      });
-    } else {
-      deleteFromLocalStorage(id);
-      renderImages();
-      document.body.removeChild(loadingEl);
-    }
-  }
-}
+  const transaction = db.transaction(["images"], "readwrite");
+  const store = transaction.objectStore("images");
+  const request = store.delete(id);
 
-function deleteFromIndexedDB(id) {
-  return new Promise((resolve, reject) => {
-    try {
-      const transaction = db.transaction(['images'], 'readwrite');
-      const store = transaction.objectStore('images');
-      const request = store.delete(id);
-      
-      request.onsuccess = () => resolve();
-      request.onerror = () => reject(request.error);
-    } catch (error) {
-      reject(error);
-    }
-  });
-}
+  request.onsuccess = function() {
+    console.log("Image deleted successfully!");
+    loadImages(); // Reload images after deletion
+  };
 
-function deleteFromLocalStorage(id) {
-  const images = JSON.parse(localStorage.getItem('images') || '[]');
-  const updatedImages = images.filter(image => image.id !== id);
-  localStorage.setItem('images', JSON.stringify(updatedImages));
+  request.onerror = function() {
+    console.error("Error deleting image:", request.error);
+  };
 }
 
 /* ============ Backup Feature ============ */
