@@ -20,12 +20,7 @@ body {
   color: #e0e0e0;
 }
 
-.container {
-  max-width: 100%; /* Change from none to 100% to allow full width */
-  width: 100%; /* Ensure the container takes the full width */
 
-  padding: 20px; /* Keep the padding as is */
-} 
 
 /* ===============================
    Animations
@@ -55,7 +50,8 @@ body {
   background: linear-gradient(135deg, #2196F3, #21CBF3);
   border-radius: 10px;
   box-shadow: 7px 6px 12px rgba(0, 0, 0, 0.3);
-  margin-top: 30px;
+  margin-top: 50px;
+  width: 100%;
 }
 .header h1 {
   font-size: 2.5em;
@@ -73,6 +69,7 @@ body {
   gap: 10px;
   margin-bottom: 20px;
   flex-wrap: wrap;
+  width: 100%;
 }
 .note-type-btn {
   padding: 10px 20px;
@@ -102,6 +99,8 @@ body {
   padding: 20px;
   box-shadow: 0 4px 8px rgba(0,0,0,0.5);
   margin-bottom: 20px;
+  width: 100%;
+
 }
 .note-section.active {
   display: block;
@@ -372,7 +371,7 @@ body {
 /* --- Checklist Groups View --- */
 #checklistGroupsView {
   padding: 25px;
-  background: rgba(255,255,255,0.1);
+  background:  #1e1e1e;
   border-radius: 16px;
   backdrop-filter: blur(8px);
   box-shadow: 0 4px 8px rgba(0,0,0,0.4);
@@ -1461,7 +1460,7 @@ body {
   <input type="file" id="backupFileInput" style="display: none;" accept=".json" onchange="importData(this.files[0])" />
   <button id="importBtn" onclick="document.getElementById('backupFileInput').click()">Import Backup</button>
   
-  <div class="container">
+  
     <div class="header">
       <h1>eNotes</h1>
       <h8>-by Aditya</h8>
@@ -1567,7 +1566,7 @@ body {
         </div>
       
     </div> <!-- End of Images Section -->
-  </div>
+  
   
   <!-- Password Prompt Modal -->
   <div class="password-prompt" id="passwordPrompt">
