@@ -21,10 +21,11 @@ body {
 }
 
 .container {
-  max-width: 1200px;
-  margin: 20px auto;
-  padding: 20px;
-}
+  max-width: 100%; /* Change from none to 100% to allow full width */
+  width: 100%; /* Ensure the container takes the full width */
+
+  padding: 20px; /* Keep the padding as is */
+} 
 
 /* ===============================
    Animations
@@ -314,14 +315,14 @@ body {
   position: absolute;
   top: 10px;
   right: 10px;
-  background-color: #fa0000;
+
   border: none;
   cursor: pointer;
-  color: #fff;
-  font-size: 1em;
+  color:  #808080;
+  font-size: 1.2em;
   width: 30px;
   height: 30px;
-  border-radius: 50%;
+  border-radius: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1466,9 +1467,9 @@ body {
       <h8>-by Aditya</h8>
     </div>
     <div class="note-types">
-      <button class="note-type-btn active" onclick="showSection('regular')">Regular Notes</button>
+      <button class="note-type-btn active" onclick="showSection('regular')">Regular</button>
       <button class="note-type-btn" onclick="showSection('checklist')">Checklists</button>
-      <button class="note-type-btn" onclick="showSection('locked')">Locked Notes</button>
+      <button class="note-type-btn" onclick="showSection('locked')">Locked</button>
       <button class="note-type-btn" onclick="showSection('images')">Images</button>
     </div>
     
@@ -1529,7 +1530,7 @@ body {
     <!-- Images Section -->
     <div class="note-section" id="imagesSection"> <!-- Ensure this is a note-section -->
       
-        <h1>Saved Images </h1>
+        <h1>Secured Images </h1>
         
         <!-- Authentication Section -->
         <div class="auth-section" id="authSection">
