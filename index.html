@@ -1561,9 +1561,9 @@ function createNote(type) {
   }
   if (type === 'locked') {
   if (!lockedSectionPassword) {
-    const rawPassword = prompt('Set a password for the locked section:'); 
+    const rawPassword = prompt('Set a password for the locked section:');
     if (rawPassword) {
-      lockedSectionPassword = rawPassword.trim(); // 2. .trim() जोड़ा यहाँ (तीसरा कोड)
+      lockedSectionPassword = rawPassword.trim(); // ट्रिम जोड़ा
       localStorage.setItem('lockedSectionPassword', lockedSectionPassword);
     } else {
       alert("Password is required to create locked notes!");
@@ -2802,9 +2802,9 @@ const VAULT_KEY = 'secureImageVault';
                 }
             }
 
-/* ============ Password Reset Functionality ============ */
-function resetPassword() {
+            function resetPassword() {
   if (!lockedSectionPassword) {
+    // पहली बार पासवर्ड सेट करना
     const newPassword = prompt("Set a new password:");
     if (!newPassword) return; // यूजर ने कैंसल किया
     const trimmedNew = newPassword.trim();
@@ -2823,9 +2823,12 @@ function resetPassword() {
     return;
   }
 
+  // पासवर्ड रीसेट करना
   const currentPassword = prompt("Please enter your current password:");
   if (!currentPassword) return;
-  if (currentPassword.trim() === lockedSectionPassword) {
+  const trimmedCurrent = currentPassword.trim();
+
+  if (trimmedCurrent === lockedSectionPassword) {
     const newPassword = prompt("Enter your new password:");
     if (!newPassword) return;
     const trimmedNew = newPassword.trim();
@@ -2837,6 +2840,7 @@ function resetPassword() {
     if (trimmedNew === trimmedConfirm) {
       lockedSectionPassword = trimmedNew;
       localStorage.setItem('lockedSectionPassword', trimmedNew);
+      lockedSectionUnlocked = false; // 🔴 यहाँ नया कोड जोड़ें
       alert("Password reset successfully!");
     } else {
       alert("New passwords do not match.");
@@ -2845,9 +2849,6 @@ function resetPassword() {
     alert("Incorrect current password.");
   }
 }
-
-
-
 
 
 
