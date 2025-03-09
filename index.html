@@ -1452,7 +1452,7 @@ body {
         <button onclick="createNote('locked')">Save Note</button>
         <button class="unlock-btn" onclick="showPasswordPrompt()">Unlock Locked Section</button>
         <button class="reset-btn" onclick="resetPassword()" 
-          style="background-color: #808080; color: white; padding: 6px 12px;
+          style="background: transparent; color: #808080; padding: 6px 12px;
           border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">
     Reset Password
   </button>
@@ -1560,16 +1560,17 @@ function createNote(type) {
     note.checkedItems = [];
   }
   if (type === 'locked') {
-    if (!lockedSectionPassword) {
-      lockedSectionPassword = prompt('Set a password for the locked section:');
-      if (lockedSectionPassword) {
-        localStorage.setItem('lockedSectionPassword', lockedSectionPassword);
-      } else {
-        alert("Password is required to create locked notes!");
-        return;
-      }
+  if (!lockedSectionPassword) {
+    const rawPassword = prompt('Set a password for the locked section:'); 
+    if (rawPassword) {
+      lockedSectionPassword = rawPassword.trim(); // 2. .trim() जोड़ा यहाँ (तीसरा कोड)
+      localStorage.setItem('lockedSectionPassword', lockedSectionPassword);
+    } else {
+      alert("Password is required to create locked notes!");
+      return;
     }
   }
+}
   saveNote(note);
   renderNotes();
   clearInputs(type);
@@ -1594,13 +1595,7 @@ function renderNotes() {
         .map(note => createNoteElement(note))
         .join('');
       
-      // Add resett password button to locked section
-      if (type === 'locked' && !lockedSectionUnlocked) {
-        notesHtml = `<button class="reset-btn" onclick="resetPassword()" 
-                     style="background-color: grey; color: white; padding: 5px 10px; 
-                     border: none; border-radius: 4px; margin-bottom: 10px; cursor: pointer; z-index: 1001;">
-                     Reset Password</button>${notesHtml}`;
-      }
+      
       
       container.innerHTML = notesHtml;
     }
@@ -1655,7 +1650,7 @@ function showPasswordPrompt() {
 }
 
 function unlockSection() {
-  const password = document.getElementById('passwordInput').value;
+  const password = document.getElementById('passwordInput').value.trim(); // ट्रिम जोड़ा
   if (password === lockedSectionPassword) {
     lockedSectionUnlocked = true;
     document.getElementById('passwordPrompt').style.display = 'none';
@@ -1664,7 +1659,6 @@ function unlockSection() {
     alert('Wrong password!');
   }
 }
-
 function deleteNote(id) {
   const notes = JSON.parse(localStorage.getItem('notes') || '[]');
   const note = notes.find(note => note.id === id);
@@ -2812,10 +2806,16 @@ const VAULT_KEY = 'secureImageVault';
 function resetPassword() {
   if (!lockedSectionPassword) {
     const newPassword = prompt("Set a new password:");
+    if (!newPassword) return; // यूजर ने कैंसल किया
+    const trimmedNew = newPassword.trim();
+    
     const confirmPassword = prompt("Confirm new password:");
-    if (newPassword === confirmPassword) {
-      lockedSectionPassword = newPassword;
-      localStorage.setItem('lockedSectionPassword', newPassword);
+    if (!confirmPassword) return;
+    const trimmedConfirm = confirmPassword.trim();
+
+    if (trimmedNew === trimmedConfirm) {
+      lockedSectionPassword = trimmedNew;
+      localStorage.setItem('lockedSectionPassword', trimmedNew);
       alert("Password set successfully!");
     } else {
       alert("Passwords do not match.");
@@ -2824,12 +2824,19 @@ function resetPassword() {
   }
 
   const currentPassword = prompt("Please enter your current password:");
-  if (currentPassword === lockedSectionPassword) {
+  if (!currentPassword) return;
+  if (currentPassword.trim() === lockedSectionPassword) {
     const newPassword = prompt("Enter your new password:");
+    if (!newPassword) return;
+    const trimmedNew = newPassword.trim();
+
     const confirmPassword = prompt("Confirm your new password:");
-    if (newPassword === confirmPassword) {
-      lockedSectionPassword = newPassword;
-      localStorage.setItem('lockedSectionPassword', newPassword);
+    if (!confirmPassword) return;
+    const trimmedConfirm = confirmPassword.trim();
+
+    if (trimmedNew === trimmedConfirm) {
+      lockedSectionPassword = trimmedNew;
+      localStorage.setItem('lockedSectionPassword', trimmedNew);
       alert("Password reset successfully!");
     } else {
       alert("New passwords do not match.");
@@ -2838,8 +2845,6 @@ function resetPassword() {
     alert("Incorrect current password.");
   }
 }
-
-
 
 
 
