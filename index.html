@@ -162,24 +162,35 @@ body {
   color: #e0e0e0;
 }
 .notebook .delete-btn {
-  position: absolute;
-  top: 5px;
-  right: 5px;
-  background-color: #ff3b30;
-  border: none;
-  cursor: pointer;
-  color: #fff;
-  font-size: 0.9em;
-  width: 25px;
-  height: 25px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.3s;
+  background: none !important;
+  color: #4fc3f7 !important;
+  box-shadow: none !important;
+  width: 28px;
+  height: 28px;
+  border: 1px solid #4fc3f7 !important;
+  transition: all 0.3s ease;
 }
 .notebook .delete-btn:hover {
   background-color: #ff453a;
+}
+
+#notebookNotesView .delete-btn{
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  padding: 0;
+  border: none;
+  cursor: pointer;
+  color:  #808080;
+  font-size: 1em;
+  width: 30px;
+  height: 30px;
+  border-radius: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  transition: background-color 0.3s, transform 0.2s;
 }
 
 /* Notebook Notes View */
@@ -313,7 +324,7 @@ body {
   position: absolute;
   top: 10px;
   right: 10px;
-
+  padding: 0;
   border: none;
   cursor: pointer;
   color:  #808080;
@@ -443,19 +454,21 @@ body {
   position: absolute;
   top: 10px;
   right: 10px;
-  background: rgba(231,76,60,0.9);
+  padding: 0;
   border: none;
-  color: #fff;
-  font-size: 0.9em;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
+  cursor: pointer;
+  color:  #808080;
+  font-size: 1em;
+  width: 30px;
+  height: 30px;
+  border-radius: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-  transition: transform 0.2s;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  transition: background-color 0.3s, transform 0.2s;
 }
+
 
 .checklist-group .delete-btn:hover {
   transform: scale(1.1);
@@ -635,21 +648,24 @@ body {
 }
 .checklist-group .delete-btn {
   position: absolute;
-  top: 5px;
-  right: 5px;
-  background-color: #ff3b30;
+  top: 10px;
+  right: 10px;
+  padding: 0;
   border: none;
   cursor: pointer;
-  color: #fff;
-  font-size: 0.9em;
-  width: 25px;
-  height: 25px;
-  border-radius: 50%;
+  color:  #808080;
+  font-size: 1em;
+  width: 30px;
+  height: 30px;
+  border-radius: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.3s;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  transition: background-color 0.3s, transform 0.2s;
 }
+
+
 .checklist-group .delete-btn:hover {
   background-color: #ff453a;
 }
