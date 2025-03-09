@@ -318,7 +318,7 @@ body {
   border: none;
   cursor: pointer;
   color:  #808080;
-  font-size: 1.2em;
+  font-size: 1em;
   width: 30px;
   height: 30px;
   border-radius: 100%;
@@ -1293,12 +1293,12 @@ body {
             visibility: visible;
         }
 
-        .delete-btn {
+        #delete-btn {
             color: #c80606 !important;
             display: flex !important;
         }
 
-        .delete-btn:hover {
+        #delete-btn:hover {
             color: var(--accent) !important;
         }
 
@@ -1680,7 +1680,7 @@ function createNoteElement(note) {
   }
   return `
     <div class="note ${note.type === 'locked' ? 'locked' : ''}" id="note-${note.id}">
-      <button class="delete-btn" onclick="deleteNote(${note.id})">✕</button>
+      <button class="delete-btn" onclick="deleteNote(${note.id})"><i class="fas fa-trash"></i></button>
       <div class="note-content">${content}</div>
       <small>${note.timestamp}</small>
     </div>
@@ -1749,7 +1749,7 @@ function renderNotebooks(notebooks) {
     notebooksList.innerHTML = notebooks.map(nb => `
       <div class="notebook">
         <h3 onclick="openNotebook(${nb.id})">${nb.title}</h3>
-        <button class="delete-btn" onclick="deleteNotebook(event, ${nb.id})">✕</button>
+        <button class="delete-btn" onclick="deleteNotebook(event, ${nb.id})"><i class="fas fa-trash"></i></button>
       </div>
     `).join('');
   }
@@ -1839,7 +1839,7 @@ function renderNotebookNotes(notes) {
         return `
           <div class="note" id="note-${note.id}">
             <div class="note-buttons" style="position:absolute; top:10px; right:10px; display:flex; gap:5px;">
-              <button class="delete-btn" onclick="deleteNotebookNote(${note.id})">✕</button>
+              <button class="delete-btn" onclick="deleteNotebookNote(${note.id})"><i class="fas fa-trash"></i></button>
               <button class="edit-btn" onclick="editNotebookNote(${note.id})" title="Edit">&#9998;</button>
             </div>
             <div class="note-content">${note.content}</div>
@@ -1919,7 +1919,7 @@ function renderChecklistGroups(groups) {
     groupsList.innerHTML = groups.map(group => `
       <div class="checklist-group">
         <h3 onclick="openChecklistGroup(${group.id})">${group.title}</h3>
-        <button class="delete-btn" onclick="deleteChecklistGroup(event, ${group.id})">✕</button>
+        <button class="delete-btn" onclick="deleteChecklistGroup(event, ${group.id})"><i class="fas fa-trash"></i></button>
       </div>
     `).join('');
   }
@@ -1994,7 +1994,7 @@ function renderChecklistGroupNotes(notes) {
   } else {
     container.innerHTML = notes.map(note => `
       <div class="note" id="note-${note.id}">
-        <button class="delete-btn" onclick="deleteChecklistGroupNote(${note.id})">✕</button>
+        <button class="delete-btn" onclick="deleteChecklistGroupNote(${note.id})"><i class="fas fa-trash"></i></button>
         <div class="note-content">
           ${note.content.map((item, idx) => `
             <label class="checklist-item">
@@ -2146,7 +2146,7 @@ function renderImages(images) {
           <div style="display: flex; align-items: center; justify-content: space-between;">
             <small class="image-timestamp">${image.timestamp}</small>
             <div class="buttons" style="display: flex; align-items: center;">
-              <button class="edit-btn" onclick="editImage(${image.id})" style="background-color: #2196F3; color: white; border: none; border-radius: 5px; padding: 5px; margin-right: 5px;">
+              <button class="edit-btn" onclick="editImage(${image.id})" style="background-color: #2196F3; color: white; border: none; border-radius: 5px; padding: 5px; ">
                 <i class="fas fa-edit"></i>
               </button>
               <button class="delete-btn" onclick="deleteImage(${image.id}); event.stopPropagation();" style="background-color: grey; color: white; border: none; border-radius: 5px; padding: 5px;">
@@ -2186,6 +2186,11 @@ function openImage(imageData) {
 }
 
 function deleteImage(id) {
+  // Add confirmation dialog
+  if (!confirm("Are you sure you want to delete this image?")) {
+    return; // Exit if the user cancels
+  }
+  
   if (confirm("Are you sure you want to delete this image?")) {
     const transaction = db.transaction(["images"], "readwrite");
     const store = transaction.objectStore("images");
@@ -2645,7 +2650,7 @@ const VAULT_KEY = 'secureImageVault';
                                 <button class="cancel-btn" onclick="cancelEdit(this)">
                                     <i class="fas fa-times"></i>
                                 </button>
-                                <button class="delete-btn" onclick="deleteImage(${img.id})">
+                                <button id="delete-btn" onclick="deleteImage(${img.id})">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </div>
@@ -2724,6 +2729,11 @@ const VAULT_KEY = 'secureImageVault';
             }
 
             async function deleteImage(imageId) {
+                // Add confirmation dialog
+                if (!confirm("Are you sure you want to delete this image?")) {
+                    return; // Exit if the user cancels
+                }
+                
                 showLoading();
                 try {
                     // Delete from IndexedDB
