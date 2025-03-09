@@ -1449,8 +1449,13 @@ body {
     <div class="note-section" id="lockedSection">
       <div class="note-creator">
         <textarea id="lockedContent" placeholder="Write your locked note here..."></textarea>
-        <button onclick="createNote('locked')">Lock Note</button>
+        <button onclick="createNote('locked')">Save Note</button>
         <button class="unlock-btn" onclick="showPasswordPrompt()">Unlock Locked Section</button>
+        <button class="reset-btn" onclick="resetPassword()" 
+          style="background-color: #808080; color: white; padding: 6px 12px;
+          border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">
+    Reset Password
+  </button>
       </div>
       <div class="notes-container" id="lockedNotes"></div>
     </div>
@@ -1458,7 +1463,7 @@ body {
     <!-- Images Section -->
     <div class="note-section" id="imagesSection"> <!-- Ensure this is a note-section -->
       
-        <h1>Secured Images </h1>
+        <h1>🛡️ Secured Images </h1>
         
         <!-- Authentication Section -->
         <div class="auth-section" id="authSection">
@@ -1531,6 +1536,7 @@ function showSection(section) {
   currentSection = section;
 }
 
+
 /* ============ Regular, Checklist & Locked Notes ============ */
 function createNote(type) {
   const contentField = document.getElementById(`${type}Content`);
@@ -1569,6 +1575,9 @@ function createNote(type) {
   clearInputs(type);
 }
 
+
+
+
 function saveNote(note) {
   const notes = JSON.parse(localStorage.getItem('notes') || '[]');
   notes.push(note);
@@ -1577,14 +1586,23 @@ function saveNote(note) {
 
 function renderNotes() {
   const notes = JSON.parse(localStorage.getItem('notes') || '[]');
-  // Update only checklist and locked notes (regular notes are in notebooks)
   ['checklist', 'locked'].forEach(type => {
     const container = document.getElementById(`${type}Notes`);
     if (container) {
-      container.innerHTML = notes
+      let notesHtml = notes
         .filter(note => note.type === type)
         .map(note => createNoteElement(note))
         .join('');
+      
+      // Add resett password button to locked section
+      if (type === 'locked' && !lockedSectionUnlocked) {
+        notesHtml = `<button class="reset-btn" onclick="resetPassword()" 
+                     style="background-color: grey; color: white; padding: 5px 10px; 
+                     border: none; border-radius: 4px; margin-bottom: 10px; cursor: pointer; z-index: 1001;">
+                     Reset Password</button>${notesHtml}`;
+      }
+      
+      container.innerHTML = notesHtml;
     }
   });
 }
@@ -2228,23 +2246,22 @@ function importData(file) {
 /* ============ Initial Loads ============ */
 function initializeApp() {
   request.onsuccess = function(event) {
-    db = event.target.result; // Assign db to the global variable
+    db = event.target.result;
     loadNotebooks();
     renderNotes();
     loadChecklistGroups();
-    loadImages(); // Load images when the app initializes
+    loadImages();
 
-    // Restore last opened section
     const lastSection = localStorage.getItem('lastOpenedSection') || 'regular';
     showSection(lastSection);
 
-    // Restore last opened notebook if any
     const lastNotebook = localStorage.getItem('lastOpenedNotebook');
     if (lastSection === 'regular' && lastNotebook) {
       openNotebook(parseInt(lastNotebook));
     }
   };
 }
+
 
 const VAULT_KEY = 'secureImageVault';
             const MASTER_PASSWORD_KEY = 'masterPassword';
@@ -2790,6 +2807,44 @@ const VAULT_KEY = 'secureImageVault';
                     hideLoading();
                 }
             }
+
+/* ============ Password Reset Functionality ============ */
+function resetPassword() {
+  if (!lockedSectionPassword) {
+    const newPassword = prompt("Set a new password:");
+    const confirmPassword = prompt("Confirm new password:");
+    if (newPassword === confirmPassword) {
+      lockedSectionPassword = newPassword;
+      localStorage.setItem('lockedSectionPassword', newPassword);
+      alert("Password set successfully!");
+    } else {
+      alert("Passwords do not match.");
+    }
+    return;
+  }
+
+  const currentPassword = prompt("Please enter your current password:");
+  if (currentPassword === lockedSectionPassword) {
+    const newPassword = prompt("Enter your new password:");
+    const confirmPassword = prompt("Confirm your new password:");
+    if (newPassword === confirmPassword) {
+      lockedSectionPassword = newPassword;
+      localStorage.setItem('lockedSectionPassword', newPassword);
+      alert("Password reset successfully!");
+    } else {
+      alert("New passwords do not match.");
+    }
+  } else {
+    alert("Incorrect current password.");
+  }
+}
+
+
+
+
+
+
+
 
             // Initialize Google Sign-in when page loads
             window.onload = initGoogleSignIn;
