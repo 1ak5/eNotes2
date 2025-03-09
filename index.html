@@ -1219,8 +1219,9 @@ body {
         .image-info .buttons {
             display: flex;
             gap: 5px;
-            align-items: flex-start;
+            align-items: center;
             min-width: fit-content;
+            justify-content: center;
         }
 
         .image-info button {
@@ -1449,6 +1450,14 @@ body {
             h1 {
                 font-size: 2em;
             }
+        }
+
+        .image-info .image-name {
+            white-space: nowrap; /* Prevent text from wrapping */
+            overflow: hidden; /* Hide overflow text */
+            text-overflow: ellipsis; /* Show ellipsis for overflow text */
+            max-width: 100px; /* Set a maximum width for the name */
+            display: inline-block; /* Ensure it behaves like a block element */
         }
 
         
